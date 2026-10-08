@@ -5,6 +5,8 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.example.mycomunidaddefedition.ui.screen.RegistroScreen
+import com.example.mycomunidaddefedition.ui.screen.ResumenScreen
 import com.example.mycomunidaddefedition.viewmodel.UsuarioViewModel
 
 
@@ -25,6 +27,7 @@ fun AppNavigation(){
         }
         composable("resumen") {
             ResumenScreen(usuarioViewModel)
+
         }
     }
 }

@@ -1,118 +1,132 @@
 package com.example.mycomunidaddefedition.viewmodel
 
+import android.app.Application
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.example.mycomunidaddefedition.data.local.UsuarioDatabase
+import com.example.mycomunidaddefedition.data.local.UsuarioEntity
 import com.example.mycomunidaddefedition.data.model.UsuarioErrores
 import com.example.mycomunidaddefedition.data.model.UsuarioUiState
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 
-class UsuarioViewModel : ViewModel() {
+// Agregar
+class UsuarioViewModel(app: Application) : AndroidViewModel(app) {
 
+    // Agregar
+    private val dao = UsuarioDatabase.getDatabase(app).usuarioDao()
+
+
+
+    // Estado interno mutable
     private val _estado = MutableStateFlow(UsuarioUiState())
 
-    val estado: StateFlow<UsuarioUiState> = _estado.asStateFlow()
+    // Estado expuesto para la UI
+    val estado: StateFlow<UsuarioUiState> = _estado
 
-
+    // Actualiza el campo nombre y limpia su error
     fun onNombreChange(valor: String) {
         _estado.update {
             it.copy(
                 nombre = valor,
-                errores = it.errores.copy(
-                    nombre = null
-                )
+                errores = it.errores.copy(nombre = null)
             )
         }
     }
 
-
+    // Actualiza el campo correo
     fun onCorreoChange(valor: String) {
         _estado.update {
             it.copy(
                 correo = valor,
-                errores = it.errores.copy(
-                    correo = null
-                )
+                errores = it.errores.copy(correo = null)
             )
         }
     }
 
-
+    // Actualiza el campo clave
     fun onClaveChange(valor: String) {
         _estado.update {
             it.copy(
                 clave = valor,
-                errores = it.errores.copy(
-                    clave = null
-                )
+                errores = it.errores.copy(clave = null)
             )
         }
     }
 
-
+    // Actualiza el campo dirección
     fun onDireccionChange(valor: String) {
         _estado.update {
             it.copy(
                 direccion = valor,
-                errores = it.errores.copy(
-                    direccion = null
-                )
+                errores = it.errores.copy(direccion = null)
             )
         }
     }
 
-
+    // Actualiza checkbox de aceptación
     fun onAceptarTerminosChange(valor: Boolean) {
         _estado.update {
-            it.copy(
-                aceptarTerminos = valor
-            )
+            it.copy(aceptarTerminos = valor)
         }
     }
 
-
+    // Validación global del formulario
     fun validarFormulario(): Boolean {
-
-        val actual = _estado.value
+        val estadoActual = _estado.value
 
         val errores = UsuarioErrores(
+            nombre = if (estadoActual.nombre.isBlank())
+                "Campo obligatorio"
+            else null,
 
-            nombre = if (actual.nombre.isBlank()) {
-                "El nombre es obligatorio"
-            } else {
-                null
-            },
+            correo = if (!estadoActual.correo.contains("@"))
+                "Correo inválido"
+            else null,
 
-            correo = if (actual.correo.isBlank()) {
-                "El correo es obligatorio"
-            } else {
-                null
-            },
+            clave = if (estadoActual.clave.length < 6)
+                "Debe tener al menos 6 caracteres"
+            else null,
 
-            clave = if (actual.clave.isBlank()) {
-                "La clave es obligatoria"
-            } else {
-                null
-            },
-
-            direccion = if (actual.direccion.isBlank()) {
-                "La dirección es obligatoria"
-            } else {
-                null
-            }
+            direccion = if (estadoActual.direccion.isBlank())
+                "Campo obligatorio"
+            else null
         )
 
+        val hayErrores = listOfNotNull(
+            errores.nombre,
+            errores.correo,
+            errores.clave,
+            errores.direccion
+        ).isNotEmpty()
+
         _estado.update {
-            it.copy(
-                errores = errores
-            )
+            it.copy(errores = errores)
         }
 
-        return errores.nombre == null &&
-                errores.correo == null &&
-                errores.clave == null &&
-                errores.direccion == null &&
-                actual.aceptarTerminos
+        return !hayErrores
     }
-}
+
+    // Agregar
+    // Guarda en Room
+    fun guardar(onListo: () -> Unit) {
+        val a = _estado.value
+        viewModelScope.launch {
+            dao.insertar(
+                UsuarioEntity(
+                    nombre = a.nombre,
+                    correo = a.correo,
+                    clave = a.clave,
+                    direccion = a.direccion
+                )
+            )
+            onListo()
+        }
+    }
+//Hasta aqui
+
+}// fin view model
