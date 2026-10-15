@@ -8,8 +8,10 @@ import com.example.mycomunidaddefedition.data.local.OportunidadEntity
 import com.example.mycomunidaddefedition.data.local.UsuarioDatabase
 import com.example.mycomunidaddefedition.data.repository.OportunidadRepository
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
@@ -17,229 +19,225 @@ class OportunidadViewModel(
     app: Application
 ) : AndroidViewModel(app) {
 
-    // 1. Conexión con Room mediante DAO y Repository.
+    // Connect to Room through the DAO and repository.
     private val dao =
         UsuarioDatabase.getDatabase(app).oportunidadDao()
 
-    private val repository =
-        OportunidadRepository(dao)
+    private val repository = OportunidadRepository(dao)
 
-    // 2. Estado privado del formulario.
-    private val _estado =
-        MutableStateFlow(OportunidadUiState())
+    // Private form state.
+    private val _state = MutableStateFlow(OportunidadUiState())
 
-    // Estado público que observa la interfaz.
-    val estado: StateFlow<OportunidadUiState> =
-        _estado.asStateFlow()
+    // Public state observed by the UI.
+    val state: StateFlow<OportunidadUiState> = _state.asStateFlow()
 
-    // 3. Lista reactiva de oportunidades guardadas.
-    val oportunidades: StateFlow<List<OportunidadEntity>> =
-        repository.obtenerTodas()
-            .let { flujo ->
-                kotlinx.coroutines.flow.stateIn(
-                    scope = viewModelScope,
-                    started = kotlinx.coroutines.flow.SharingStarted.WhileSubscribed(5000),
-                    initialValue = emptyList()
-                )
-            }
+    // Reactive list of stored opportunities.
+    val opportunities: StateFlow<List<OportunidadEntity>> =
+        repository.getAll().stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = emptyList()
+        )
 
-    // 4. Cambios de los campos del formulario.
-
-    fun onNombreChange(valor: String) {
-        _estado.update {
+    // Handle form field changes.
+    fun onNameChange(value: String) {
+        _state.update {
             it.copy(
-                nombre = valor,
-                nombreError = null,
-                mensajeError = null,
-                guardadoExitosamente = false
+                name = value,
+                nameError = null,
+                errorMessage = null,
+                saveSuccessful = false
             )
         }
     }
 
-    fun onTipoChange(valor: String) {
-        _estado.update {
+    fun onTypeChange(value: String) {
+        _state.update {
             it.copy(
-                tipo = valor,
-                tipoError = null,
-                mensajeError = null,
-                guardadoExitosamente = false
+                type = value,
+                typeError = null,
+                errorMessage = null,
+                saveSuccessful = false
             )
         }
     }
 
-    fun onDescripcionChange(valor: String) {
-        _estado.update {
+    fun onDescriptionChange(value: String) {
+        _state.update {
             it.copy(
-                descripcion = valor,
-                descripcionError = null,
-                mensajeError = null,
-                guardadoExitosamente = false
+                description = value,
+                descriptionError = null,
+                errorMessage = null,
+                saveSuccessful = false
             )
         }
     }
 
-    fun onFuenteChange(valor: String) {
-        _estado.update {
+    fun onSourceChange(value: String) {
+        _state.update {
             it.copy(
-                fuente = valor,
-                fuenteError = null,
-                mensajeError = null,
-                guardadoExitosamente = false
+                source = value,
+                sourceError = null,
+                errorMessage = null,
+                saveSuccessful = false
             )
         }
     }
 
-    fun onPrioridadChange(valor: String) {
-        _estado.update {
+    fun onPriorityChange(value: String) {
+        _state.update {
             it.copy(
-                prioridad = valor,
-                prioridadError = null,
-                mensajeError = null,
-                guardadoExitosamente = false
+                priority = value,
+                priorityError = null,
+                errorMessage = null,
+                saveSuccessful = false
             )
         }
     }
 
-    fun onPotencialChange(valor: String) {
-        _estado.update {
+    fun onPotentialChange(value: String) {
+        _state.update {
             it.copy(
-                potencial = valor,
-                potencialError = null,
-                mensajeError = null,
-                guardadoExitosamente = false
+                potential = value,
+                potentialError = null,
+                errorMessage = null,
+                saveSuccessful = false
             )
         }
     }
 
-    fun onEstadoChange(valor: String) {
-        _estado.update {
+    fun onStatusChange(value: String) {
+        _state.update {
             it.copy(
-                estado = valor,
-                estadoError = null,
-                mensajeError = null,
-                guardadoExitosamente = false
+                status = value,
+                statusError = null,
+                errorMessage = null,
+                saveSuccessful = false
             )
         }
     }
 
-    fun onObservacionesChange(valor: String) {
-        _estado.update {
+    fun onObservationsChange(value: String) {
+        _state.update {
             it.copy(
-                observaciones = valor,
-                mensajeError = null,
-                guardadoExitosamente = false
+                observations = value,
+                errorMessage = null,
+                saveSuccessful = false
             )
         }
     }
 
-    // 5. Validación de las reglas del formulario.
-    fun validarFormulario(): Boolean {
-        val actual = _estado.value
+    // Validate the form before saving.
+    fun validateForm(): Boolean {
+        val current = _state.value
 
-        val nombreError =
-            if (actual.nombre.isBlank()) {
+        val nameError =
+            if (current.name.isBlank()) {
                 "El nombre es obligatorio"
             } else {
                 null
             }
 
-        val tipoError =
-            if (actual.tipo.isBlank()) {
-                "Selecciona el tipo de oportunidad"
+        val typeError =
+            if (current.type.isBlank()) {
+                "El tipo de oportunidad es obligatorio"
             } else {
                 null
             }
 
-        val descripcionError =
-            if (actual.descripcion.isBlank()) {
+        val descriptionError =
+            if (current.description.isBlank()) {
                 "La descripción es obligatoria"
             } else {
                 null
             }
 
-        val fuenteError =
-            if (actual.fuente.isBlank()) {
+        val sourceError =
+            if (current.source.isBlank()) {
                 "La fuente de información es obligatoria"
             } else {
                 null
             }
 
-        val prioridadError =
-            if (actual.prioridad !in
-                listOf("Baja", "Media", "Alta")
-            ) {
+        val priorityError =
+            if (current.priority !in listOf("Baja", "Media", "Alta")) {
                 "Selecciona una prioridad válida"
             } else {
                 null
             }
 
-        val potencialError =
-            if (actual.potencial !in
-                listOf("Bajo", "Medio", "Alto")
-            ) {
+        val potentialError =
+            if (current.potential !in listOf("Bajo", "Medio", "Alto")) {
                 "Selecciona un potencial válido"
             } else {
                 null
             }
 
-        val estadoError =
-            if (actual.estado.isBlank()) {
+        val statusError =
+            if (current.status.isBlank()) {
                 "El estado es obligatorio"
             } else {
                 null
             }
 
-        _estado.update {
+        _state.update {
             it.copy(
-                nombreError = nombreError,
-                tipoError = tipoError,
-                descripcionError = descripcionError,
-                fuenteError = fuenteError,
-                prioridadError = prioridadError,
-                potencialError = potencialError,
-                estadoError = estadoError
+                nameError = nameError,
+                typeError = typeError,
+                descriptionError = descriptionError,
+                sourceError = sourceError,
+                priorityError = priorityError,
+                potentialError = potentialError,
+                statusError = statusError
             )
         }
 
         return listOf(
-            nombreError,
-            tipoError,
-            descripcionError,
-            fuenteError,
-            prioridadError,
-            potencialError,
-            estadoError
+            nameError,
+            typeError,
+            descriptionError,
+            sourceError,
+            priorityError,
+            potentialError,
+            statusError
         ).all { it == null }
     }
 
-    // 6. Preparar el formulario para una oportunidad nueva.
-    fun nuevaOportunidad() {
-        _estado.value = OportunidadUiState()
+    // Reset the form for a new opportunity.
+    fun newOpportunity() {
+        _state.value = OportunidadUiState()
     }
 
-    // 7. Cargar una oportunidad para editarla.
-    fun cargarOportunidad(id: Long) {
+    // Load an existing opportunity for editing.
+    fun loadOpportunity(id: Long) {
         viewModelScope.launch {
             try {
-                val oportunidad = repository.obtenerPorId(id)
+                val opportunity = repository.getById(id)
 
-                if (oportunidad != null) {
-                    _estado.value = OportunidadUiState(
-                        id = oportunidad.id,
-                        nombre = oportunidad.nombre,
-                        tipo = oportunidad.tipo,
-                        descripcion = oportunidad.descripcion,
-                        fuente = oportunidad.fuente,
-                        prioridad = oportunidad.prioridad,
-                        potencial = oportunidad.potencial,
-                        estado = oportunidad.estado,
-                        observaciones = oportunidad.observaciones
+                if (opportunity != null) {
+                    _state.value = OportunidadUiState(
+                        id = opportunity.id,
+                        name = opportunity.nombre,
+                        type = opportunity.tipo,
+                        description = opportunity.descripcion,
+                        source = opportunity.fuente,
+                        priority = opportunity.prioridad,
+                        potential = opportunity.potencial,
+                        status = opportunity.estado,
+                        observations = opportunity.observaciones
                     )
+                } else {
+                    _state.update {
+                        it.copy(
+                            errorMessage =
+                                "No se encontró la oportunidad solicitada"
+                        )
+                    }
                 }
-            } catch (e: Exception) {
-                _estado.update {
+            } catch (exception: Exception) {
+                _state.update {
                     it.copy(
-                        mensajeError =
+                        errorMessage =
                             "No se pudo cargar la oportunidad"
                     )
                 }
@@ -247,57 +245,57 @@ class OportunidadViewModel(
         }
     }
 
-    // 8. Guardar una oportunidad nueva o actualizar una existente.
-    fun guardar(onListo: () -> Unit) {
-        if (!validarFormulario()) {
+    // Insert a new opportunity or update an existing one.
+    fun saveOpportunity(onComplete: () -> Unit) {
+        if (!validateForm()) {
             return
         }
 
-        val actual = _estado.value
+        val current = _state.value
 
-        _estado.update {
+        _state.update {
             it.copy(
-                guardando = true,
-                guardadoExitosamente = false,
-                mensajeError = null
+                isSaving = true,
+                saveSuccessful = false,
+                errorMessage = null
             )
         }
 
         viewModelScope.launch {
             try {
-                val oportunidad = OportunidadEntity(
-                    id = actual.id,
-                    nombre = actual.nombre.trim(),
-                    tipo = actual.tipo,
-                    descripcion = actual.descripcion.trim(),
-                    fuente = actual.fuente.trim(),
-                    prioridad = actual.prioridad,
-                    potencial = actual.potencial,
-                    estado = actual.estado,
-                    observaciones = actual.observaciones.trim()
+                val opportunity = OportunidadEntity(
+                    id = current.id,
+                    nombre = current.name.trim(),
+                    tipo = current.type.trim(),
+                    descripcion = current.description.trim(),
+                    fuente = current.source.trim(),
+                    prioridad = current.priority.trim(),
+                    potencial = current.potential.trim(),
+                    estado = current.status.trim(),
+                    observaciones = current.observations.trim()
                 )
 
-                if (actual.id == 0L) {
-                    repository.insertar(oportunidad)
+                if (current.id == 0L) {
+                    repository.insert(opportunity)
                 } else {
-                    repository.actualizar(oportunidad)
+                    repository.update(opportunity)
                 }
 
-                _estado.update {
+                _state.update {
                     it.copy(
-                        guardando = false,
-                        guardadoExitosamente = true
+                        isSaving = false,
+                        saveSuccessful = true
                     )
                 }
 
-                onListo()
+                onComplete()
 
-            } catch (e: Exception) {
-                _estado.update {
+            } catch (exception: Exception) {
+                _state.update {
                     it.copy(
-                        guardando = false,
-                        guardadoExitosamente = false,
-                        mensajeError =
+                        isSaving = false,
+                        saveSuccessful = false,
+                        errorMessage =
                             "No se pudo guardar la oportunidad"
                     )
                 }
@@ -305,3 +303,4 @@ class OportunidadViewModel(
         }
     }
 }
+
