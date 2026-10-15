@@ -33,7 +33,7 @@ class OportunidadViewModel(
 
     // Reactive list of stored opportunities.
     val opportunities: StateFlow<List<OportunidadEntity>> =
-        repository.getAll().stateIn(
+        repository.obtenerTodas().stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5000),
             initialValue = emptyList()
@@ -212,7 +212,7 @@ class OportunidadViewModel(
     fun loadOpportunity(id: Long) {
         viewModelScope.launch {
             try {
-                val opportunity = repository.getById(id)
+                val opportunity = repository.obtenerPorId(id)
 
                 if (opportunity != null) {
                     _state.value = OportunidadUiState(
@@ -276,9 +276,9 @@ class OportunidadViewModel(
                 )
 
                 if (current.id == 0L) {
-                    repository.insert(opportunity)
+                    repository.insertar(opportunity)
                 } else {
-                    repository.update(opportunity)
+                    repository.actualizar(opportunity)
                 }
 
                 _state.update {
