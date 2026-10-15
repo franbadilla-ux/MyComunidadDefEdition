@@ -84,22 +84,23 @@ fun DrawerMenu(
 
             }//fin item 3
 
-            item{//Item 4
+            item {
                 NavigationDrawerItem(
-                    label = {Text("Navegador")},
-                    selected = false,
-                    onClick = {/* ACCION FUTURA*/
-                        val nombre = Uri.encode("Navegador")
-                        val numero = "5000"
-
-                        navController.navigate("ProductoFormScreen/$nombre/$numero")
-
+                    label = {
+                        Text("Oportunidades")
                     },
-                    icon = {Icon(Icons.Default.LocalFireDepartment, contentDescription= "Buscar")}
-
-                )// Fin Navigation
-
-            }//fin item 4
+                    selected = false,
+                    onClick = {
+                        navController.navigate("oportunidades")
+                    },
+                    icon = {
+                        Icon(
+                            Icons.Default.Search,
+                            contentDescription = "Oportunidades"
+                        )
+                    }
+                )
+            }
 
         }//Fin Lazy
 
