@@ -24,6 +24,7 @@ data class OportunidadUiState(
     val statusError: String? = null,
 
     // Save operation state.
+    val isLoading: Boolean = false,
     val isSaving: Boolean = false,
     val saveSuccessful: Boolean = false,
     val errorMessage: String? = null

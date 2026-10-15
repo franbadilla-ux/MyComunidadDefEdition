@@ -2,6 +2,7 @@ package com.example.mycomunidaddefedition.ui.oportunidad
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -10,6 +11,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
@@ -63,6 +65,11 @@ fun OportunidadFormScreen(
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
+
+            if (formState.isLoading) {
+                CircularProgressIndicator()
+                Text("Cargando oportunidad...")
+            }
 
             // Opportunity name.
             OutlinedTextField(
@@ -144,45 +151,36 @@ fun OportunidadFormScreen(
                 singleLine = true
             )
 
-            // Priority.
-            OutlinedTextField(
-                value = formState.priority,
-                onValueChange = viewModel::onPriorityChange,
-                label = {
-                    Text("Prioridad: Baja, Media o Alta")
-                },
-                isError = formState.priorityError != null,
-                supportingText = {
-                    formState.priorityError?.let { error ->
-                        Text(
-                            text = error,
-                            color = MaterialTheme.colorScheme.error
-                        )
-                    }
-                },
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true
-            )
+            // Valores controlados para evitar errores de escritura.
+            Text("Prioridad", style = MaterialTheme.typography.titleSmall)
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                listOf("Baja", "Media", "Alta").forEach { option ->
+                    FilterChip(
+                        selected = formState.priority == option,
+                        onClick = { viewModel.onPriorityChange(option) },
+                        label = { Text(option) },
+                        enabled = !formState.isLoading && !formState.isSaving
+                    )
+                }
+            }
+            formState.priorityError?.let {
+                Text(it, color = MaterialTheme.colorScheme.error)
+            }
 
-            // Commercial potential.
-            OutlinedTextField(
-                value = formState.potential,
-                onValueChange = viewModel::onPotentialChange,
-                label = {
-                    Text("Potencial: Bajo, Medio o Alto")
-                },
-                isError = formState.potentialError != null,
-                supportingText = {
-                    formState.potentialError?.let { error ->
-                        Text(
-                            text = error,
-                            color = MaterialTheme.colorScheme.error
-                        )
-                    }
-                },
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true
-            )
+            Text("Potencial comercial", style = MaterialTheme.typography.titleSmall)
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                listOf("Bajo", "Medio", "Alto").forEach { option ->
+                    FilterChip(
+                        selected = formState.potential == option,
+                        onClick = { viewModel.onPotentialChange(option) },
+                        label = { Text(option) },
+                        enabled = !formState.isLoading && !formState.isSaving
+                    )
+                }
+            }
+            formState.potentialError?.let {
+                Text(it, color = MaterialTheme.colorScheme.error)
+            }
 
             // Opportunity status.
             OutlinedTextField(
@@ -228,7 +226,8 @@ fun OportunidadFormScreen(
                 onClick = {
                     viewModel.saveOpportunity(onBack)
                 },
-                enabled = !formState.isSaving,
+                enabled = !formState.isSaving && !formState.isLoading &&
+                    (oportunidadId == null || oportunidadId == 0L || formState.id == oportunidadId),
                 modifier = Modifier.fillMaxWidth()
             ) {
                 if (formState.isSaving) {

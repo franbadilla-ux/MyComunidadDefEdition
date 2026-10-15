@@ -203,18 +203,26 @@ class OportunidadViewModel(
         ).all { it == null }
     }
 
-    // Reset the form for a new opportunity.
+    // Detiene la carga anterior al comenzar un formulario nuevo.
+    private var loadJob: kotlinx.coroutines.Job? = null
+
     fun newOpportunity() {
+        loadJob?.cancel()
         _state.value = OportunidadUiState()
     }
 
-    // Load an existing opportunity for editing.
+    // Obtiene el registro desde Room sin permitir guardar datos incompletos.
     fun loadOpportunity(id: Long) {
-        viewModelScope.launch {
+        loadJob?.cancel()
+        _state.value = OportunidadUiState(isLoading = true)
+        loadJob = viewModelScope.launch {
             try {
                 val opportunity = repository.obtenerPorId(id)
-
-                if (opportunity != null) {
+                if (opportunity == null) {
+                    _state.update {
+                        it.copy(isLoading = false, errorMessage = "La oportunidad no existe")
+                    }
+                } else {
                     _state.value = OportunidadUiState(
                         id = opportunity.id,
                         name = opportunity.nombre,
@@ -226,40 +234,24 @@ class OportunidadViewModel(
                         status = opportunity.estado,
                         observations = opportunity.observaciones
                     )
-                } else {
-                    _state.update {
-                        it.copy(
-                            errorMessage =
-                                "No se encontró la oportunidad solicitada"
-                        )
-                    }
                 }
-            } catch (exception: Exception) {
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                throw e
+            } catch (e: Exception) {
                 _state.update {
-                    it.copy(
-                        errorMessage =
-                            "No se pudo cargar la oportunidad"
-                    )
+                    it.copy(isLoading = false, errorMessage = "No se pudo cargar la oportunidad")
                 }
             }
         }
     }
 
-    // Insert a new opportunity or update an existing one.
+    // Valida, guarda en Room y navega solamente si terminó correctamente.
     fun saveOpportunity(onComplete: () -> Unit) {
-        if (!validateForm()) {
-            return
-        }
+        if (_state.value.isLoading || _state.value.isSaving) return
+        if (!validateForm()) return
 
         val current = _state.value
-
-        _state.update {
-            it.copy(
-                isSaving = true,
-                saveSuccessful = false,
-                errorMessage = null
-            )
-        }
+        _state.update { it.copy(isSaving = true, saveSuccessful = false, errorMessage = null) }
 
         viewModelScope.launch {
             try {
@@ -280,27 +272,19 @@ class OportunidadViewModel(
                 } else {
                     repository.actualizar(opportunity)
                 }
-
-                _state.update {
-                    it.copy(
-                        isSaving = false,
-                        saveSuccessful = true
-                    )
-                }
-
+                _state.update { it.copy(isSaving = false, saveSuccessful = true) }
                 onComplete()
-
-            } catch (exception: Exception) {
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                throw e
+            } catch (e: Exception) {
                 _state.update {
                     it.copy(
                         isSaving = false,
                         saveSuccessful = false,
-                        errorMessage =
-                            "No se pudo guardar la oportunidad"
+                        errorMessage = "No se pudo guardar la oportunidad"
                     )
                 }
             }
         }
     }
 }
-
