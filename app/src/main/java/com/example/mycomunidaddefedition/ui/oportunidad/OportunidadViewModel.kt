@@ -14,6 +14,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import com.example.mycomunidaddefedition.data.repository.UbicacionRepository
 
 class OportunidadViewModel(
     app: Application
@@ -24,6 +25,56 @@ class OportunidadViewModel(
         UsuarioDatabase.getDatabase(app).oportunidadDao()
 
     private val repository = OportunidadRepository(dao)
+
+
+    // Repository de ubicación
+    private val ubicacionRepository =
+        UbicacionRepository(getApplication())
+
+    fun obtenerUbicacion() {
+
+        if (_state.value.buscandoUbicacion) return
+
+        _state.update {
+            it.copy(
+                buscandoUbicacion = true,
+                errorUbicacion = null
+            )
+        }
+
+        ubicacionRepository.obtenerUbicacion { resultado ->
+
+            resultado.fold(
+                onSuccess = { coordenadas ->
+                    _state.update {
+                        it.copy(
+                            latitud = coordenadas.first,
+                            longitud = coordenadas.second,
+                            buscandoUbicacion = false,
+                            errorUbicacion = null
+                        )
+                    }
+                },
+                onFailure = {
+                    _state.update {
+                        it.copy(
+                            buscandoUbicacion = false,
+                            errorUbicacion = "No se pudo obtener la ubicación"
+                        )
+                    }
+                }
+            )
+        }
+    }
+
+    fun permisoUbicacionDenegado() {
+        _state.update {
+            it.copy(
+                errorUbicacion = "Permiso de ubicación denegado"
+            )
+        }
+    }
+
 
     // Private form state.
     private val _state = MutableStateFlow(OportunidadUiState())
@@ -38,6 +89,7 @@ class OportunidadViewModel(
             started = SharingStarted.WhileSubscribed(5000),
             initialValue = emptyList()
         )
+
 
     // Handle form field changes.
     fun onNameChange(value: String) {

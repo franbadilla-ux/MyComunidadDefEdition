@@ -1,32 +1,28 @@
+
 package com.example.mycomunidaddefedition.ui.oportunidad
 
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
+import android.Manifest
+import android.content.pm.PackageManager
+
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Button
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilterChip
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
+
+import androidx.compose.material3.*
+
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Business
-import androidx.compose.material.icons.filled.Description
-import androidx.compose.material.icons.filled.Info
+
+import androidx.core.content.ContextCompat
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -35,9 +31,27 @@ fun OportunidadFormScreen(
     oportunidadId: Long? = null,
     onBack: () -> Unit
 ) {
+
+    // Estado del formulario
     val formState by viewModel.state.collectAsState()
 
+    val context = LocalContext.current
+
+    // Solicitar permiso de ubicación
+    val solicitarPermiso = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { concedido ->
+
+        if (concedido) {
+            viewModel.obtenerUbicacion()
+        } else {
+            viewModel.permisoUbicacionDenegado()
+        }
+    }
+
+    // Crear o cargar una oportunidad
     LaunchedEffect(oportunidadId) {
+
         if (oportunidadId != null && oportunidadId > 0L) {
             viewModel.loadOpportunity(oportunidadId)
         } else {
@@ -67,15 +81,17 @@ fun OportunidadFormScreen(
                 .padding(innerPadding)
                 .verticalScroll(rememberScrollState())
                 .padding(16.dp),
+
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
 
+            // Cargando datos desde Room
             if (formState.isLoading) {
                 CircularProgressIndicator()
                 Text("Cargando oportunidad...")
             }
 
-            // Opportunity name.
+            // 1. Nombre
             OutlinedTextField(
                 value = formState.name,
                 onValueChange = viewModel::onNameChange,
@@ -84,9 +100,9 @@ fun OportunidadFormScreen(
                 },
                 isError = formState.nameError != null,
                 supportingText = {
-                    formState.nameError?.let { error ->
+                    formState.nameError?.let {
                         Text(
-                            text = error,
+                            text = it,
                             color = MaterialTheme.colorScheme.error
                         )
                     }
@@ -95,7 +111,7 @@ fun OportunidadFormScreen(
                 singleLine = true
             )
 
-            // Opportunity type.
+            // 2. Tipo
             OutlinedTextField(
                 value = formState.type,
                 onValueChange = viewModel::onTypeChange,
@@ -104,9 +120,9 @@ fun OportunidadFormScreen(
                 },
                 isError = formState.typeError != null,
                 supportingText = {
-                    formState.typeError?.let { error ->
+                    formState.typeError?.let {
                         Text(
-                            text = error,
+                            text = it,
                             color = MaterialTheme.colorScheme.error
                         )
                     }
@@ -115,7 +131,7 @@ fun OportunidadFormScreen(
                 singleLine = true
             )
 
-            // Description.
+            // 3. Descripción
             OutlinedTextField(
                 value = formState.description,
                 onValueChange = viewModel::onDescriptionChange,
@@ -124,9 +140,9 @@ fun OportunidadFormScreen(
                 },
                 isError = formState.descriptionError != null,
                 supportingText = {
-                    formState.descriptionError?.let { error ->
+                    formState.descriptionError?.let {
                         Text(
-                            text = error,
+                            text = it,
                             color = MaterialTheme.colorScheme.error
                         )
                     }
@@ -135,7 +151,7 @@ fun OportunidadFormScreen(
                 minLines = 3
             )
 
-            // Information source.
+            // 4. Fuente de información
             OutlinedTextField(
                 value = formState.source,
                 onValueChange = viewModel::onSourceChange,
@@ -144,9 +160,9 @@ fun OportunidadFormScreen(
                 },
                 isError = formState.sourceError != null,
                 supportingText = {
-                    formState.sourceError?.let { error ->
+                    formState.sourceError?.let {
                         Text(
-                            text = error,
+                            text = it,
                             color = MaterialTheme.colorScheme.error
                         )
                     }
@@ -155,38 +171,71 @@ fun OportunidadFormScreen(
                 singleLine = true
             )
 
-            // Valores controlados para evitar errores de escritura.
-            Text("Prioridad", style = MaterialTheme.typography.titleSmall)
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                listOf("Baja", "Media", "Alta").forEach { option ->
+            // 5. Prioridad
+            Text(
+                "Prioridad",
+                style = MaterialTheme.typography.titleSmall
+            )
+
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                listOf("Baja", "Media", "Alta").forEach { opcion ->
+
                     FilterChip(
-                        selected = formState.priority == option,
-                        onClick = { viewModel.onPriorityChange(option) },
-                        label = { Text(option) },
-                        enabled = !formState.isLoading && !formState.isSaving
+                        selected = formState.priority == opcion,
+                        onClick = {
+                            viewModel.onPriorityChange(opcion)
+                        },
+                        label = {
+                            Text(opcion)
+                        },
+                        enabled = !formState.isLoading &&
+                                !formState.isSaving
                     )
                 }
             }
+
             formState.priorityError?.let {
-                Text(it, color = MaterialTheme.colorScheme.error)
+                Text(
+                    text = it,
+                    color = MaterialTheme.colorScheme.error
+                )
             }
 
-            Text("Potencial comercial", style = MaterialTheme.typography.titleSmall)
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                listOf("Bajo", "Medio", "Alto").forEach { option ->
+            // 6. Potencial comercial
+            Text(
+                "Potencial comercial",
+                style = MaterialTheme.typography.titleSmall
+            )
+
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                listOf("Bajo", "Medio", "Alto").forEach { opcion ->
+
                     FilterChip(
-                        selected = formState.potential == option,
-                        onClick = { viewModel.onPotentialChange(option) },
-                        label = { Text(option) },
-                        enabled = !formState.isLoading && !formState.isSaving
+                        selected = formState.potential == opcion,
+                        onClick = {
+                            viewModel.onPotentialChange(opcion)
+                        },
+                        label = {
+                            Text(opcion)
+                        },
+                        enabled = !formState.isLoading &&
+                                !formState.isSaving
                     )
                 }
             }
+
             formState.potentialError?.let {
-                Text(it, color = MaterialTheme.colorScheme.error)
+                Text(
+                    text = it,
+                    color = MaterialTheme.colorScheme.error
+                )
             }
 
-            // Opportunity status.
+            // 7. Estado de gestión
             OutlinedTextField(
                 value = formState.status,
                 onValueChange = viewModel::onStatusChange,
@@ -195,9 +244,9 @@ fun OportunidadFormScreen(
                 },
                 isError = formState.statusError != null,
                 supportingText = {
-                    formState.statusError?.let { error ->
+                    formState.statusError?.let {
                         Text(
-                            text = error,
+                            text = it,
                             color = MaterialTheme.colorScheme.error
                         )
                     }
@@ -206,7 +255,7 @@ fun OportunidadFormScreen(
                 singleLine = true
             )
 
-            // Additional observations.
+            // 8. Observaciones
             OutlinedTextField(
                 value = formState.observations,
                 onValueChange = viewModel::onObservationsChange,
@@ -217,28 +266,90 @@ fun OportunidadFormScreen(
                 minLines = 2
             )
 
-            // General error message.
-            formState.errorMessage?.let { error ->
+            // 9. Recurso nativo: ubicación GPS
+            Text(
+                "Referencia geográfica",
+                style = MaterialTheme.typography.titleMedium
+            )
+
+            OutlinedButton(
+                onClick = {
+
+                    val permiso = ContextCompat.checkSelfPermission(
+                        context,
+                        Manifest.permission.ACCESS_COARSE_LOCATION
+                    ) == PackageManager.PERMISSION_GRANTED
+
+                    if (permiso) {
+                        viewModel.obtenerUbicacion()
+                    } else {
+                        solicitarPermiso.launch(
+                            Manifest.permission.ACCESS_COARSE_LOCATION
+                        )
+                    }
+                },
+                enabled = !formState.buscandoUbicacion &&
+                        !formState.isLoading &&
+                        !formState.isSaving,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("Obtener ubicación")
+            }
+
+            // Indicador de carga GPS
+            if (formState.buscandoUbicacion) {
+                CircularProgressIndicator()
+                Text("Buscando ubicación...")
+            }
+
+            // Mostrar coordenadas obtenidas
+            if (
+                formState.latitud != null &&
+                formState.longitud != null
+            ) {
+                Text("Latitud: ${formState.latitud}")
+                Text("Longitud: ${formState.longitud}")
+            }
+
+            // Mensajes de error GPS
+            formState.errorUbicacion?.let {
                 Text(
-                    text = error,
+                    text = it,
                     color = MaterialTheme.colorScheme.error
                 )
             }
 
-            // Save or update the opportunity.
+            // Errores generales del formulario
+            formState.errorMessage?.let {
+                Text(
+                    text = it,
+                    color = MaterialTheme.colorScheme.error
+                )
+            }
+
+            // 10. Guardar o actualizar
             Button(
                 onClick = {
                     viewModel.saveOpportunity(onBack)
                 },
-                enabled = !formState.isSaving && !formState.isLoading &&
-                    (oportunidadId == null || oportunidadId == 0L || formState.id == oportunidadId),
+                enabled = !formState.isSaving &&
+                        !formState.isLoading &&
+                        (
+                                oportunidadId == null ||
+                                        oportunidadId == 0L ||
+                                        formState.id == oportunidadId
+                                ),
                 modifier = Modifier.fillMaxWidth()
             ) {
+
                 if (formState.isSaving) {
                     CircularProgressIndicator()
                 } else {
                     Text(
-                        if (oportunidadId != null && oportunidadId > 0L) {
+                        if (
+                            oportunidadId != null &&
+                            oportunidadId > 0L
+                        ) {
                             "Actualizar oportunidad"
                         } else {
                             "Guardar oportunidad"
@@ -247,8 +358,8 @@ fun OportunidadFormScreen(
                 }
             }
 
-            // Return to the previous screen.
-            Button(
+            // 11. Volver
+            OutlinedButton(
                 onClick = onBack,
                 enabled = !formState.isSaving,
                 modifier = Modifier.fillMaxWidth()
