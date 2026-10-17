@@ -1,34 +1,40 @@
+
 package com.example.mycomunidaddefedition.viewmodel
 
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.mycomunidaddefedition.data.local.UsuarioDatabase
 import com.example.mycomunidaddefedition.data.local.UsuarioEntity
 import com.example.mycomunidaddefedition.data.model.UsuarioErrores
 import com.example.mycomunidaddefedition.data.model.UsuarioUiState
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
-// Agregar
 class UsuarioViewModel(app: Application) : AndroidViewModel(app) {
 
-    // Agregar
-    private val dao = UsuarioDatabase.getDatabase(app).usuarioDao()
+    // 1. Acceso a Room
+    private val dao = UsuarioDatabase
+        .getDatabase(app)
+        .usuarioDao()
 
+    // 2. Estado del formulario
+    private val _estado = MutableStateFlow(
+        UsuarioUiState()
+    )
 
+    val estado: StateFlow<UsuarioUiState> =
+        _estado.asStateFlow()
 
-    // Estado interno mutable
-    private val _estado = MutableStateFlow(UsuarioUiState())
+    // 3. Último usuario guardado en Room
+    val ultimoUsuario: Flow<UsuarioEntity?> =
+        dao.obtenerUltimo()
 
-    // Estado expuesto para la UI
-    val estado: StateFlow<UsuarioUiState> = _estado
-
-    // Actualiza el campo nombre y limpia su error
+    // 4. Actualizar nombre
     fun onNombreChange(valor: String) {
         _estado.update {
             it.copy(
@@ -38,7 +44,7 @@ class UsuarioViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
-    // Actualiza el campo correo
+    // 5. Actualizar correo
     fun onCorreoChange(valor: String) {
         _estado.update {
             it.copy(
@@ -48,7 +54,7 @@ class UsuarioViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
-    // Actualiza el campo clave
+    // 6. Actualizar contraseña
     fun onClaveChange(valor: String) {
         _estado.update {
             it.copy(
@@ -58,7 +64,7 @@ class UsuarioViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
-    // Actualiza el campo dirección
+    // 7. Actualizar dirección
     fun onDireccionChange(valor: String) {
         _estado.update {
             it.copy(
@@ -68,33 +74,44 @@ class UsuarioViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
-    // Actualiza checkbox de aceptación
+    // 8. Términos y condiciones
     fun onAceptarTerminosChange(valor: Boolean) {
         _estado.update {
-            it.copy(aceptarTerminos = valor)
+            it.copy(
+                aceptarTerminos = valor
+            )
         }
     }
 
-    // Validación global del formulario
+    // 9. Validación del formulario
     fun validarFormulario(): Boolean {
-        val estadoActual = _estado.value
+
+        val actual = _estado.value
 
         val errores = UsuarioErrores(
-            nombre = if (estadoActual.nombre.isBlank())
+            nombre = if (actual.nombre.isBlank()) {
                 "Campo obligatorio"
-            else null,
+            } else {
+                null
+            },
 
-            correo = if (!estadoActual.correo.contains("@"))
+            correo = if (!actual.correo.contains("@")) {
                 "Correo inválido"
-            else null,
+            } else {
+                null
+            },
 
-            clave = if (estadoActual.clave.length < 6)
+            clave = if (actual.clave.length < 6) {
                 "Debe tener al menos 6 caracteres"
-            else null,
+            } else {
+                null
+            },
 
-            direccion = if (estadoActual.direccion.isBlank())
+            direccion = if (actual.direccion.isBlank()) {
                 "Campo obligatorio"
-            else null
+            } else {
+                null
+            }
         )
 
         val hayErrores = listOfNotNull(
@@ -111,22 +128,23 @@ class UsuarioViewModel(app: Application) : AndroidViewModel(app) {
         return !hayErrores
     }
 
-    // Agregar
-    // Guarda en Room
+    // 10. Guardar en Room
     fun guardar(onListo: () -> Unit) {
-        val a = _estado.value
+
+        val usuario = _estado.value
+
         viewModelScope.launch {
+
             dao.insertar(
                 UsuarioEntity(
-                    nombre = a.nombre,
-                    correo = a.correo,
-                    clave = a.clave,
-                    direccion = a.direccion
+                    nombre = usuario.nombre,
+                    correo = usuario.correo,
+                    clave = usuario.clave,
+                    direccion = usuario.direccion
                 )
             )
+
             onListo()
         }
     }
-//Hasta aqui
-
-}// fin view model
+}
