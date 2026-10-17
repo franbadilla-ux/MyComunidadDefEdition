@@ -27,7 +27,8 @@ import androidx.compose.ui.unit.dp
 fun ListaOportunidadesScreen(
     viewModel: OportunidadViewModel,
     onAdd: () -> Unit,
-    onEdit: (Long) -> Unit
+    onEdit: (Long) -> Unit,
+    onScanQr: () -> Unit
 ) {
     val opportunities by viewModel.opportunities.collectAsState()
 
@@ -55,6 +56,13 @@ fun ListaOportunidadesScreen(
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text("Agregar oportunidad")
+            }
+
+            Button(
+                onClick = onScanQr,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("Leer QR de una oportunidad")
             }
 
             if (opportunities.isEmpty()) {

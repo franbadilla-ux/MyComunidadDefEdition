@@ -14,6 +14,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import com.example.mycomunidaddefedition.data.repository.UbicacionRepository
 
 class OportunidadViewModel(
     app: Application
@@ -24,6 +25,56 @@ class OportunidadViewModel(
         UsuarioDatabase.getDatabase(app).oportunidadDao()
 
     private val repository = OportunidadRepository(dao)
+
+
+    // Repository de ubicación
+    private val ubicacionRepository =
+        UbicacionRepository(getApplication())
+
+    fun obtenerUbicacion() {
+
+        if (_state.value.buscandoUbicacion) return
+
+        _state.update {
+            it.copy(
+                buscandoUbicacion = true,
+                errorUbicacion = null
+            )
+        }
+
+        ubicacionRepository.obtenerUbicacion { resultado ->
+
+            resultado.fold(
+                onSuccess = { coordenadas ->
+                    _state.update {
+                        it.copy(
+                            latitud = coordenadas.first,
+                            longitud = coordenadas.second,
+                            buscandoUbicacion = false,
+                            errorUbicacion = null
+                        )
+                    }
+                },
+                onFailure = {
+                    _state.update {
+                        it.copy(
+                            buscandoUbicacion = false,
+                            errorUbicacion = "No se pudo obtener la ubicación"
+                        )
+                    }
+                }
+            )
+        }
+    }
+
+    fun permisoUbicacionDenegado() {
+        _state.update {
+            it.copy(
+                errorUbicacion = "Permiso de ubicación denegado"
+            )
+        }
+    }
+
 
     // Private form state.
     private val _state = MutableStateFlow(OportunidadUiState())
@@ -38,6 +89,7 @@ class OportunidadViewModel(
             started = SharingStarted.WhileSubscribed(5000),
             initialValue = emptyList()
         )
+
 
     // Handle form field changes.
     fun onNameChange(value: String) {
@@ -203,18 +255,26 @@ class OportunidadViewModel(
         ).all { it == null }
     }
 
-    // Reset the form for a new opportunity.
+    // Detiene la carga anterior al comenzar un formulario nuevo.
+    private var loadJob: kotlinx.coroutines.Job? = null
+
     fun newOpportunity() {
+        loadJob?.cancel()
         _state.value = OportunidadUiState()
     }
 
-    // Load an existing opportunity for editing.
+    // Obtiene el registro desde Room sin permitir guardar datos incompletos.
     fun loadOpportunity(id: Long) {
-        viewModelScope.launch {
+        loadJob?.cancel()
+        _state.value = OportunidadUiState(isLoading = true)
+        loadJob = viewModelScope.launch {
             try {
                 val opportunity = repository.obtenerPorId(id)
-
-                if (opportunity != null) {
+                if (opportunity == null) {
+                    _state.update {
+                        it.copy(isLoading = false, errorMessage = "La oportunidad no existe")
+                    }
+                } else {
                     _state.value = OportunidadUiState(
                         id = opportunity.id,
                         name = opportunity.nombre,
@@ -226,40 +286,24 @@ class OportunidadViewModel(
                         status = opportunity.estado,
                         observations = opportunity.observaciones
                     )
-                } else {
-                    _state.update {
-                        it.copy(
-                            errorMessage =
-                                "No se encontró la oportunidad solicitada"
-                        )
-                    }
                 }
-            } catch (exception: Exception) {
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                throw e
+            } catch (e: Exception) {
                 _state.update {
-                    it.copy(
-                        errorMessage =
-                            "No se pudo cargar la oportunidad"
-                    )
+                    it.copy(isLoading = false, errorMessage = "No se pudo cargar la oportunidad")
                 }
             }
         }
     }
 
-    // Insert a new opportunity or update an existing one.
+    // Valida, guarda en Room y navega solamente si terminó correctamente.
     fun saveOpportunity(onComplete: () -> Unit) {
-        if (!validateForm()) {
-            return
-        }
+        if (_state.value.isLoading || _state.value.isSaving) return
+        if (!validateForm()) return
 
         val current = _state.value
-
-        _state.update {
-            it.copy(
-                isSaving = true,
-                saveSuccessful = false,
-                errorMessage = null
-            )
-        }
+        _state.update { it.copy(isSaving = true, saveSuccessful = false, errorMessage = null) }
 
         viewModelScope.launch {
             try {
@@ -280,27 +324,19 @@ class OportunidadViewModel(
                 } else {
                     repository.actualizar(opportunity)
                 }
-
-                _state.update {
-                    it.copy(
-                        isSaving = false,
-                        saveSuccessful = true
-                    )
-                }
-
+                _state.update { it.copy(isSaving = false, saveSuccessful = true) }
                 onComplete()
-
-            } catch (exception: Exception) {
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                throw e
+            } catch (e: Exception) {
                 _state.update {
                     it.copy(
                         isSaving = false,
                         saveSuccessful = false,
-                        errorMessage =
-                            "No se pudo guardar la oportunidad"
+                        errorMessage = "No se pudo guardar la oportunidad"
                     )
                 }
             }
         }
     }
 }
-

@@ -49,6 +49,17 @@ dependencies {
     implementation("androidx.compose.material:material-icons-core")
     implementation("androidx.compose.material:material-icons-extended")
 
+    // Servicio de ubicación del dispositivo
+    implementation("com.google.android.gms:play-services-location:21.3.0")
+
+    // Escáner QR: CameraX y ML Kit
+    val cameraXVersion = "1.4.2"
+    implementation("androidx.camera:camera-core:$cameraXVersion")
+    implementation("androidx.camera:camera-camera2:$cameraXVersion")
+    implementation("androidx.camera:camera-lifecycle:$cameraXVersion")
+    implementation("androidx.camera:camera-view:$cameraXVersion")
+    implementation("com.google.mlkit:barcode-scanning:17.3.0")
+
     // Dependencias Room
     val roomVersion = "2.8.4"
 

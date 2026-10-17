@@ -329,7 +329,7 @@ fun HomeScreen(
                             navController.navigate("DrawerMenu/$user")
                             {//inicia navegacion
                                 popUpTo("login"){inclusive = true} // no volver al login con el back
-                                launchSingleTop
+                                launchSingleTop = true
 
                             }//fin inicia navegacion
                         }// fin submit

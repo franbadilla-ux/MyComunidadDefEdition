@@ -1,23 +1,15 @@
-
 package com.example.mycomunidaddefedition.ui.oportunidad
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
@@ -27,9 +19,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 
@@ -40,10 +29,8 @@ fun OportunidadFormScreen(
     oportunidadId: Long? = null,
     onBack: () -> Unit
 ) {
-
     val formState by viewModel.state.collectAsState()
 
-    // 1. Cargar oportunidad o preparar nuevo registro
     LaunchedEffect(oportunidadId) {
         if (oportunidadId != null && oportunidadId > 0L) {
             viewModel.loadOpportunity(oportunidadId)
@@ -52,7 +39,6 @@ fun OportunidadFormScreen(
         }
     }
 
-    // 2. Estructura de la pantalla
     Scaffold(
         topBar = {
             TopAppBar(
@@ -78,16 +64,18 @@ fun OportunidadFormScreen(
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
 
-            // 3. Nombre
+            // Opportunity name.
             OutlinedTextField(
                 value = formState.name,
                 onValueChange = viewModel::onNameChange,
-                label = { Text("Nombre de la oportunidad") },
+                label = {
+                    Text("Nombre de la oportunidad")
+                },
                 isError = formState.nameError != null,
                 supportingText = {
-                    formState.nameError?.let {
+                    formState.nameError?.let { error ->
                         Text(
-                            it,
+                            text = error,
                             color = MaterialTheme.colorScheme.error
                         )
                     }
@@ -96,16 +84,18 @@ fun OportunidadFormScreen(
                 singleLine = true
             )
 
-            // 4. Tipo
+            // Opportunity type.
             OutlinedTextField(
                 value = formState.type,
                 onValueChange = viewModel::onTypeChange,
-                label = { Text("Tipo de oportunidad") },
+                label = {
+                    Text("Tipo de oportunidad")
+                },
                 isError = formState.typeError != null,
                 supportingText = {
-                    formState.typeError?.let {
+                    formState.typeError?.let { error ->
                         Text(
-                            it,
+                            text = error,
                             color = MaterialTheme.colorScheme.error
                         )
                     }
@@ -114,16 +104,18 @@ fun OportunidadFormScreen(
                 singleLine = true
             )
 
-            // 5. Descripción
+            // Description.
             OutlinedTextField(
                 value = formState.description,
                 onValueChange = viewModel::onDescriptionChange,
-                label = { Text("Descripción") },
+                label = {
+                    Text("Descripción")
+                },
                 isError = formState.descriptionError != null,
                 supportingText = {
-                    formState.descriptionError?.let {
+                    formState.descriptionError?.let { error ->
                         Text(
-                            it,
+                            text = error,
                             color = MaterialTheme.colorScheme.error
                         )
                     }
@@ -132,16 +124,18 @@ fun OportunidadFormScreen(
                 minLines = 3
             )
 
-            // 6. Fuente
+            // Information source.
             OutlinedTextField(
                 value = formState.source,
                 onValueChange = viewModel::onSourceChange,
-                label = { Text("Fuente de información") },
+                label = {
+                    Text("Fuente de información")
+                },
                 isError = formState.sourceError != null,
                 supportingText = {
-                    formState.sourceError?.let {
+                    formState.sourceError?.let { error ->
                         Text(
-                            it,
+                            text = error,
                             color = MaterialTheme.colorScheme.error
                         )
                     }
@@ -150,47 +144,78 @@ fun OportunidadFormScreen(
                 singleLine = true
             )
 
-            // 7. Prioridad
-            SelectorOportunidad(
-                titulo = "Prioridad",
-                valor = formState.priority,
-                opciones = listOf("Baja", "Media", "Alta"),
-                error = formState.priorityError,
-                onSeleccionar = viewModel::onPriorityChange
+            // Priority.
+            OutlinedTextField(
+                value = formState.priority,
+                onValueChange = viewModel::onPriorityChange,
+                label = {
+                    Text("Prioridad: Baja, Media o Alta")
+                },
+                isError = formState.priorityError != null,
+                supportingText = {
+                    formState.priorityError?.let { error ->
+                        Text(
+                            text = error,
+                            color = MaterialTheme.colorScheme.error
+                        )
+                    }
+                },
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true
             )
 
-            // 8. Potencial comercial
-            SelectorOportunidad(
-                titulo = "Potencial comercial",
-                valor = formState.potential,
-                opciones = listOf("Bajo", "Medio", "Alto"),
-                error = formState.potentialError,
-                onSeleccionar = viewModel::onPotentialChange
+            // Commercial potential.
+            OutlinedTextField(
+                value = formState.potential,
+                onValueChange = viewModel::onPotentialChange,
+                label = {
+                    Text("Potencial: Bajo, Medio o Alto")
+                },
+                isError = formState.potentialError != null,
+                supportingText = {
+                    formState.potentialError?.let { error ->
+                        Text(
+                            text = error,
+                            color = MaterialTheme.colorScheme.error
+                        )
+                    }
+                },
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true
             )
 
-            // 9. Estado de gestión
-            SelectorOportunidad(
-                titulo = "Estado de gestión",
-                valor = formState.status,
-                opciones = listOf(
-                    "Evento identificado",
-                    "En gestión",
-                    "Finalizada"
-                ),
-                error = formState.statusError,
-                onSeleccionar = viewModel::onStatusChange
+            // Opportunity status.
+            OutlinedTextField(
+                value = formState.status,
+                onValueChange = viewModel::onStatusChange,
+                label = {
+                    Text("Estado de gestión")
+                },
+                isError = formState.statusError != null,
+                supportingText = {
+                    formState.statusError?.let { error ->
+                        Text(
+                            text = error,
+                            color = MaterialTheme.colorScheme.error
+                        )
+                    }
+                },
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true
             )
 
-            // 10. Observaciones
+            // Additional observations.
             OutlinedTextField(
                 value = formState.observations,
                 onValueChange = viewModel::onObservationsChange,
-                label = { Text("Observaciones") },
+                label = {
+                    Text("Observaciones")
+                },
                 modifier = Modifier.fillMaxWidth(),
                 minLines = 2
             )
 
-            // 11. Mensajes generales
+            // General error message.
             formState.errorMessage?.let { error ->
                 Text(
                     text = error,
@@ -198,7 +223,7 @@ fun OportunidadFormScreen(
                 )
             }
 
-            // 12. Guardar
+            // Save or update the opportunity.
             Button(
                 onClick = {
                     viewModel.saveOpportunity(onBack)
@@ -219,80 +244,13 @@ fun OportunidadFormScreen(
                 }
             }
 
-            // 13. Volver
+            // Return to the previous screen.
             Button(
                 onClick = onBack,
                 enabled = !formState.isSaving,
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text("Volver")
-            }
-        }
-    }
-}
-
-// 14. Selector reutilizable
-@Composable
-fun SelectorOportunidad(
-    titulo: String,
-    valor: String,
-    opciones: List<String>,
-    error: String?,
-    onSeleccionar: (String) -> Unit
-) {
-
-    var expandido by remember {
-        mutableStateOf(false)
-    }
-
-    Box(
-        modifier = Modifier.fillMaxWidth()
-    ) {
-
-        OutlinedTextField(
-            value = valor,
-            onValueChange = {},
-            readOnly = true,
-            label = { Text(titulo) },
-            isError = error != null,
-            supportingText = {
-                error?.let {
-                    Text(
-                        it,
-                        color = MaterialTheme.colorScheme.error
-                    )
-                }
-            },
-            trailingIcon = {
-                Icon(
-                    imageVector = Icons.Default.ArrowDropDown,
-                    contentDescription = "Mostrar opciones"
-                )
-            },
-            modifier = Modifier.fillMaxWidth()
-        )
-
-        // Área para abrir las opciones
-        Box(
-            modifier = Modifier
-                .matchParentSize()
-                .clickable { expandido = true }
-        )
-
-        DropdownMenu(
-            expanded = expandido,
-            onDismissRequest = {
-                expandido = false
-            }
-        ) {
-            opciones.forEach { opcion ->
-                DropdownMenuItem(
-                    text = { Text(opcion) },
-                    onClick = {
-                        onSeleccionar(opcion)
-                        expandido = false
-                    }
-                )
             }
         }
     }
