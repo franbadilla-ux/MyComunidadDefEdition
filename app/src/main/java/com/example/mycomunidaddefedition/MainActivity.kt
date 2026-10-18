@@ -1,9 +1,15 @@
+
 package com.example.mycomunidaddefedition
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Scaffold
+import androidx.compose.ui.Modifier
 import com.example.mycomunidaddefedition.navigation.AppNav
 import com.example.mycomunidaddefedition.ui.theme.MyComunidadDefEditionTheme
 
@@ -15,8 +21,23 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
 
         setContent {
+
             MyComunidadDefEditionTheme {
-                AppNav()
+
+                Scaffold(
+                    modifier = Modifier.fillMaxSize()
+                ) { innerPadding ->
+
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(innerPadding)
+                    ) {
+
+                        // Única navegación principal
+                        AppNav()
+                    }
+                }
             }
         }
     }
