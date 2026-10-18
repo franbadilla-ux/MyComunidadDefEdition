@@ -195,7 +195,7 @@ fun HomeScreen(
 
                     Text(
 
-                        text = "Ten un pyro",
+                        text = "Escribe tu nombre y su contraseña",
 
                         style =
                             MaterialTheme.typography.bodyLarge.copy(
