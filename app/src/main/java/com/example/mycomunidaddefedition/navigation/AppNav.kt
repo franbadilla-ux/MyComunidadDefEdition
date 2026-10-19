@@ -15,47 +15,50 @@ import com.example.mycomunidaddefedition.ui.screen.RegistroScreen
 import com.example.mycomunidaddefedition.ui.screen.ResumenScreen
 import com.example.mycomunidaddefedition.viewmodel.UsuarioViewModel
 
+import com.example.mycomunidaddefedition.ui.oportunidad.OportunidadViewModel
+import com.example.mycomunidaddefedition.ui.oportunidad.ListaOportunidadesScreen
+import com.example.mycomunidaddefedition.ui.oportunidad.OportunidadFormScreen
+
+import com.example.mycomunidaddefedition.ui.qr.QrScannerScreen
+import com.example.mycomunidaddefedition.ui.qr.QrViewModel
+
 @Composable
 fun AppNav() {
 
-    // 1. Controlador de navegación
     val navController = rememberNavController()
 
-    // 2. ViewModel compartido entre registro y resumen
     val usuarioViewModel: UsuarioViewModel = viewModel()
+    val oportunidadViewModel: OportunidadViewModel = viewModel()
+    val qrViewModel: QrViewModel = viewModel()
 
-    // 3. Navegación principal
     NavHost(
         navController = navController,
         startDestination = "registro"
     ) {
 
-        // PANTALLA 1: REGISTRO DE USUARIO
+        // Registro de usuario
         composable("registro") {
-
             RegistroScreen(
                 navController = navController,
                 viewModel = usuarioViewModel
             )
         }
 
-        // PANTALLA 2: RESUMEN DEL REGISTRO
+        // Resumen de usuario
         composable("resumen") {
-
             ResumenScreen(
                 viewModel = usuarioViewModel
             )
         }
 
-        // PANTALLA 3: INICIO DE SESIÓN
+        // Inicio de sesión
         composable("login") {
-
             HomeScreen(
                 navController = navController
             )
         }
 
-        // PANTALLA 4: MENÚ PRINCIPAL
+        // Menú principal
         composable(
             route = "DrawerMenu/{username}",
             arguments = listOf(
@@ -72,6 +75,57 @@ fun AppNav() {
             DrawerMenu(
                 username = username,
                 navController = navController
+            )
+        }
+
+        // Lista de oportunidades
+        composable("oportunidades") {
+            ListaOportunidadesScreen(
+                viewModel = oportunidadViewModel,
+                onAdd = {
+                    navController.navigate("oportunidadForm/0")
+                },
+                onEdit = { id ->
+                    navController.navigate("oportunidadForm/$id")
+                },
+                onScanQr = {
+                    navController.navigate("qr")
+                }
+            )
+        }
+
+        // Crear o editar oportunidad
+        composable(
+            route = "oportunidadForm/{id}",
+            arguments = listOf(
+                navArgument("id") {
+                    type = NavType.LongType
+                }
+            )
+        ) { backStackEntry ->
+
+            val id = backStackEntry.arguments
+                ?.getLong("id") ?: 0L
+
+            OportunidadFormScreen(
+                viewModel = oportunidadViewModel,
+                oportunidadId = id,
+                onBack = {
+                    navController.popBackStack()
+                }
+            )
+        }
+
+        // Lector de códigos QR
+        composable("qr") {
+            QrScannerScreen(
+                viewModel = qrViewModel,
+                onBack = {
+                    navController.popBackStack()
+                },
+                onOpenOpportunity = { id ->
+                    navController.navigate("oportunidadForm/$id")
+                }
             )
         }
     }
